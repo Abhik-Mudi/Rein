@@ -12,6 +12,10 @@ Fixes #(issue number)
 ## Functional Verification
 - Please check off the behaviors verified with this change.
 
+### Screen Mirror
+
+- [ ] Screen MIrror works.
+
 ### Authentication
 
 - [ ] Connection doesn't work without a valid token.
