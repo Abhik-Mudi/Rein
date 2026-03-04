@@ -9,6 +9,7 @@ import {
 	Keyboard,
 	X,
 } from "lucide-react"
+import { useConnection } from "../../contexts/ConnectionProvider"
 
 interface ControlBarProps {
 	scrollMode: boolean
@@ -24,6 +25,26 @@ interface ControlBarProps {
 	keyboardOpen: boolean
 	extraKeysVisible: boolean
 	onExtraKeysToggle: () => void
+}
+
+function LatencyBadge() {
+	const { latency } = useConnection()
+	if (latency === null) return null
+
+	const color =
+		latency < 50
+			? "text-green-400"
+			: latency < 150
+				? "text-yellow-400"
+				: "text-red-400"
+
+	return (
+		<div className={`flex items-center justify-center px-2 h-[44px] ${color}`}>
+			<span className="text-[10px] font-mono whitespace-nowrap opacity-80">
+				{latency}ms
+			</span>
+		</div>
+	)
 }
 
 export const ControlBar: React.FC<ControlBarProps> = ({
@@ -82,6 +103,8 @@ export const ControlBar: React.FC<ControlBarProps> = ({
 
 	return (
 		<div className="flex w-full bg-base-200 border-b border-base-300 pr-1">
+			<LatencyBadge />
+
 			<button
 				type="button"
 				className={`${baseButton} ${scrollMode ? "text-primary" : ""}`}
