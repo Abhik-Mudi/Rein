@@ -7,6 +7,7 @@ let
     nspr
     alsa-lib
     libglvnd
+    dbus
     xorg.libXtst
     xorg.libX11
     xorg.libXext
@@ -15,6 +16,7 @@ in
 pkgs.mkShell {
   buildInputs = [
     pkgs.nodejs_24
+    pkgs.procps
   ] ++ sharedLibs;
 
   shellHook = ''
