@@ -9,9 +9,9 @@ let
     libglvnd
     dbus
     fuse
-    xorg.libXtst
-    xorg.libX11
-    xorg.libXext
+    libxtst
+    libx11
+    libxext
   ];
 in
 pkgs.mkShell {
