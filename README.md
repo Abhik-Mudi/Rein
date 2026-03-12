@@ -18,7 +18,8 @@ A cross-platform, LAN-based remote control for touch-screen devices. Based which
 
 ## Development Setup
 
-> **Note for Linux users:** On Wayland, the `ydotoold` daemon must be running and your user must be part of the `ydotool` group. Additionally, some native dependencies are required : install them via your package manager (see [`shell.nix`](shell.nix) for the list), or use `nix-shell` directly.
+> [!NOTE]
+> **For Linux:** On Wayland, the `ydotoold` daemon must be running and your user must be part of the `ydotool` group. Additionally, some native dependencies are required : install them via your package manager (see [`shell.nix`](shell.nix) for the list), or use `nix-shell` directly.
 
 
 ### Quick Start
