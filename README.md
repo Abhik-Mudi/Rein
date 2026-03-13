@@ -14,8 +14,8 @@ A cross-platform, LAN-based remote control for touch-screen devices following th
 *   **Framework**: [TanStack Start](https://tanstack.com/start)
 *   **Language**: TypeScript
 *   Following are currently being used but will be replaced:
-  *   **Real-time**: Native WebSockets (`ws`)
-  *   **Input Simulation**: [@nut-tree/nut-js](https://github.com/nut-tree/nut.js)
+    *   **Real-time**: Native WebSockets (`ws`)
+    *   **Input Simulation**: [@nut-tree/nut-js](https://github.com/nut-tree/nut.js)
 
 ## Development Setup
 
