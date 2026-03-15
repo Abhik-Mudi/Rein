@@ -30,7 +30,7 @@ export const ScreenMirror = ({ scrollMode, isTracking, handlers, onDataChannelRe
         const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] })
 
         pc.ontrack = (event) => {
-            console.log("🎥 Incoming Video Stream Detected!")
+            console.log("Incoming Video Stream Detected!")
             if (videoRef.current && event.streams[0]) {
                 videoRef.current.srcObject = event.streams[0]
                 setHasStream(true)
@@ -38,7 +38,7 @@ export const ScreenMirror = ({ scrollMode, isTracking, handlers, onDataChannelRe
         }
 
         pc.ondatachannel = (event) => {
-            console.log("⚡ UDP Input Channel Connected!")
+            console.log("UDP Input Channel Connected!")
             if (onDataChannelReady) {
                 onDataChannelReady(event.channel)
             }
@@ -54,7 +54,7 @@ export const ScreenMirror = ({ scrollMode, isTracking, handlers, onDataChannelRe
             }
         }
 
-        console.log("👀 Client waiting for Host Offer...")
+        console.log("Client waiting for Host Offer...")
         offerPollInterval = setInterval(async () => {
             try {
                 const res = await fetch('/api/webrtc/offer')
@@ -62,7 +62,7 @@ export const ScreenMirror = ({ scrollMode, isTracking, handlers, onDataChannelRe
 
                 if (data.offer) {
                     clearInterval(offerPollInterval)
-                    console.log("📥 Host Offer received! Signing contract...")
+                    console.log("Host Offer received! Signing contract...")
 
                     await pc.setRemoteDescription(new RTCSessionDescription(data.offer))
                     const answer = await pc.createAnswer()
@@ -73,7 +73,7 @@ export const ScreenMirror = ({ scrollMode, isTracking, handlers, onDataChannelRe
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ answer: pc.localDescription })
                     })
-                    console.log("📤 Client Answer dropped in the API mailbox!")
+                    console.log("Client Answer dropped in the API mailbox!")
 
                     icePollInterval = setInterval(async () => {
                         const iceRes = await fetch('/api/webrtc/candidates?target=client')
@@ -84,7 +84,7 @@ export const ScreenMirror = ({ scrollMode, isTracking, handlers, onDataChannelRe
                                 await pc.addIceCandidate(new RTCIceCandidate(c)).catch(e => console.error("ICE Error", e))
                             }
                             clearInterval(icePollInterval)
-                            console.log("🛰️ Client ICE Connected. Video should flow!")
+                            console.log("Client ICE Connected. Video should flow!")
                         }
                     }, 1500)
                 }
@@ -98,7 +98,7 @@ export const ScreenMirror = ({ scrollMode, isTracking, handlers, onDataChannelRe
             clearInterval(icePollInterval)
             pc.close()
         }
-    }, [onDataChannelReady])
+    }, [])
 
     return (
         <div className="absolute inset-0 flex items-center justify-center bg-black overflow-hidden select-none touch-none">

@@ -13,6 +13,7 @@ globalThis.webrtcSession = globalThis.webrtcSession || { offer: null, answer: nu
 export const Route = createFileRoute('/api/webrtc/offer')({
   server: {
     handlers: {
+      // The host(PC) uploads its WebRTC capabilities
       POST: async ({ request }) => {
         const body = await request.json()
         globalThis.webrtcSession.offer = body.offer
@@ -21,6 +22,7 @@ export const Route = createFileRoute('/api/webrtc/offer')({
         globalThis.webrtcSession.clientCandidates = []
         return new Response(JSON.stringify({ success: true }), { headers: { 'Content-Type': 'application/json' } })
       },
+      // The client(Phone) downloads the Host's offer
       GET: async () => {
         return new Response(JSON.stringify({ offer: globalThis.webrtcSession.offer }), { headers: { 'Content-Type': 'application/json' } })
       }

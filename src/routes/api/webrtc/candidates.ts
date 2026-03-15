@@ -7,6 +7,7 @@ declare global {
 export const Route = createFileRoute('/api/webrtc/candidates')({
   server: {
     handlers: {
+      // Both devices uploads their network pathways 
       POST: async ({ request }) => {
         const body = await request.json()
         globalThis.webrtcSession = globalThis.webrtcSession || { offer: null, answer: null, hostCandidates: [], clientCandidates: [] }
@@ -17,6 +18,7 @@ export const Route = createFileRoute('/api/webrtc/candidates')({
         }
         return new Response(JSON.stringify({ success: true }), { headers: { 'Content-Type': 'application/json' } })
       },
+      // Device fetch each other peer's routing coordinates to create peer-to-peer tunnel
       GET: async ({ request }) => {
         const url = new URL(request.url)
         const target = url.searchParams.get('target')

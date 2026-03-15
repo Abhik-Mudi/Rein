@@ -44,30 +44,44 @@ function RootComponent() {
 	)
 }
 
+// Initiates screen sharing on the provider (desktop) device.
 export function DesktopCaptureProvider() {
     const hasStartedRef = useRef(false)
 
     useEffect(() => {
         if (hasStartedRef.current) return
+
+		// Detect if this is a mobile device
         const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+		
+		// Check if browser supports screen sharing
         const canShare = !!navigator.mediaDevices?.getDisplayMedia
 
         if (!isMobile && canShare) {
             hasStartedRef.current = true
 
             const startWebRTC = async () => {
+				// Polling intervals for answer and ICE candidates
                 let pollInterval: NodeJS.Timeout;
                 let icePollInterval: NodeJS.Timeout;
 
                 try {
+					// Request user permission to share screen
                     const stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: { ideal: 60 } }, audio: false })
+
+					// Create RTCPeerConnection with STUN server for NAT traversal
                     const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] })
 
+					// Create data channel for receiving input events from consumer (phone)
                     const inputChannel = pc.createDataChannel('rein-input', { ordered: false, maxRetransmits: 0 })
+					
+					// Listen for input events from the remote consumer
                     inputChannel.onmessage = (event) => {
                         console.log("⚡ INCOMING WAYLAND INPUT FROM PHONE:", JSON.parse(event.data))
+						// forward input to input handler
                     }
 
+					// Send ICE candidates(possible network paths to reach the peer) to server as they are discovered
                     pc.onicecandidate = async (event) => {
                         if (event.candidate) {
                             await fetch('/api/webrtc/candidates', {
@@ -78,37 +92,44 @@ export function DesktopCaptureProvider() {
                         }
                     }
 
+					// Add all screen capture tracks to the peer connection
                     stream.getTracks().forEach(track => pc.addTrack(track, stream))
 
+					// Create and send offer to consumer
                     const offer = await pc.createOffer()
                     await pc.setLocalDescription(offer)
 
+					// Upload offer to server for consumer to retrieve
                     await fetch('/api/webrtc/offer', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ offer: pc.localDescription })
                     })
-                    console.log("📬 Host Offer dropped in the API mailbox!")
+                    console.log("Host Offer dropped in the API mailbox!")
 
+					// Poll server for consumer's answer
                     pollInterval = setInterval(async () => {
                         try {
                             const res = await fetch('/api/webrtc/answer')
                             const data = await res.json()
                             
                             if (data.answer) {
+								// Answer received! Set remote description to complete handshake
                                 await pc.setRemoteDescription(new RTCSessionDescription(data.answer))
                                 clearInterval(pollInterval)
-                                console.log("✅ WebRTC Contract Signed! Host accepted Answer.")
+                                console.log("WebRTC Contract Signed! Host accepted Answer.")
 
+								// Now poll for ICE candidates from consumer
                                 icePollInterval = setInterval(async () => {
                                     const iceRes = await fetch('/api/webrtc/candidates?target=host')
                                     const iceData = await iceRes.json()
                                     if (iceData.candidates && iceData.candidates.length > 0) {
+										// Add all remote ICE candidates
                                         for (const c of iceData.candidates) {
                                             await pc.addIceCandidate(new RTCIceCandidate(c)).catch(e => console.error("ICE Error", e))
                                         }
                                         clearInterval(icePollInterval)
-                                        console.log("🛰️ ICE Connected. Video should be flowing P2P now!")
+                                        console.log("ICE Connected. Video should be flowing P2P now!")
                                     }
                                 }, 1500)
                             }

@@ -4,6 +4,7 @@ import fs from 'node:fs'
 export const Route = createFileRoute('/api/config')({
   server: {
     handlers: {
+      // Receives updated configuration settings from the React client.
       POST: async ({ request }) => {
         try {
           const config = await request.json()

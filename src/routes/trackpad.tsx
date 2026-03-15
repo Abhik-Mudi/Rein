@@ -15,6 +15,7 @@ export const Route = createFileRoute("/trackpad")({
 
 function TrackpadPage() {
 	const [scrollMode, setScrollMode] = useState(false)
+	const [udpChannel, setUdpChannel] = useState<RTCDataChannel | null>(null)
 	const [modifier, setModifier] = useState<ModifierState>("Release")
 	const [buffer, setBuffer] = useState<string[]>([])
 	const bufferText = buffer.join(" + ")
@@ -36,7 +37,23 @@ function TrackpadPage() {
 		return s ? JSON.parse(s) : false
 	})
 
-	const { send, sendCombo } = useRemoteConnection()
+	const { send: fallbackSend, sendCombo: fallbackSendCombo } = useRemoteConnection()
+	
+	const send = (data: any) => {
+        if (udpChannel && udpChannel.readyState === 'open') {
+            udpChannel.send(JSON.stringify(data))
+        } else {
+            fallbackSend(data) // Legacy fallback
+        }
+    }
+
+	const sendCombo = (keys: string[]) => {
+        if (udpChannel && udpChannel.readyState === 'open') {
+            udpChannel.send(JSON.stringify({ type: 'combo', keys }))
+        } else {
+            fallbackSendCombo(keys)
+        }
+    }
 	// Pass sensitivity and invertScroll to the gesture hook
 	const { isTracking, handlers } = useTrackpadGesture(
 		send,
@@ -225,10 +242,11 @@ function TrackpadPage() {
 					handlers={handlers}
 				/>
 				<ScreenMirror
-					isTracking={isTracking}
-					scrollMode={scrollMode}
-					handlers={handlers}
-				/>
+                    isTracking={isTracking}
+                    scrollMode={scrollMode}
+                    handlers={handlers}
+                    onDataChannelReady={(channel) => setUdpChannel(channel)} // 🚀 CATCH THE UDP PIPE!
+                />
 				{bufferText !== "" && <BufferBar bufferText={bufferText} />}
 			</div>
 

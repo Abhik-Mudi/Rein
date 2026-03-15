@@ -12,10 +12,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TrackpadRouteImport } from './routes/trackpad'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiIpRouteImport } from './routes/api/ip'
 import { Route as ApiConfigRouteImport } from './routes/api/config'
 import { Route as ApiWebrtcOfferRouteImport } from './routes/api/webrtc/offer'
 import { Route as ApiWebrtcCandidatesRouteImport } from './routes/api/webrtc/candidates'
 import { Route as ApiWebrtcAnswerRouteImport } from './routes/api/webrtc/answer'
+import { Route as ApiTokenGenerateRouteImport } from './routes/api/token/generate'
 
 const TrackpadRoute = TrackpadRouteImport.update({
   id: '/trackpad',
@@ -30,6 +32,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiIpRoute = ApiIpRouteImport.update({
+  id: '/api/ip',
+  path: '/api/ip',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiConfigRoute = ApiConfigRouteImport.update({
@@ -52,12 +59,19 @@ const ApiWebrtcAnswerRoute = ApiWebrtcAnswerRouteImport.update({
   path: '/api/webrtc/answer',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiTokenGenerateRoute = ApiTokenGenerateRouteImport.update({
+  id: '/api/token/generate',
+  path: '/api/token/generate',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/settings': typeof SettingsRoute
   '/trackpad': typeof TrackpadRoute
   '/api/config': typeof ApiConfigRoute
+  '/api/ip': typeof ApiIpRoute
+  '/api/token/generate': typeof ApiTokenGenerateRoute
   '/api/webrtc/answer': typeof ApiWebrtcAnswerRoute
   '/api/webrtc/candidates': typeof ApiWebrtcCandidatesRoute
   '/api/webrtc/offer': typeof ApiWebrtcOfferRoute
@@ -67,6 +81,8 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/trackpad': typeof TrackpadRoute
   '/api/config': typeof ApiConfigRoute
+  '/api/ip': typeof ApiIpRoute
+  '/api/token/generate': typeof ApiTokenGenerateRoute
   '/api/webrtc/answer': typeof ApiWebrtcAnswerRoute
   '/api/webrtc/candidates': typeof ApiWebrtcCandidatesRoute
   '/api/webrtc/offer': typeof ApiWebrtcOfferRoute
@@ -77,6 +93,8 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/trackpad': typeof TrackpadRoute
   '/api/config': typeof ApiConfigRoute
+  '/api/ip': typeof ApiIpRoute
+  '/api/token/generate': typeof ApiTokenGenerateRoute
   '/api/webrtc/answer': typeof ApiWebrtcAnswerRoute
   '/api/webrtc/candidates': typeof ApiWebrtcCandidatesRoute
   '/api/webrtc/offer': typeof ApiWebrtcOfferRoute
@@ -88,6 +106,8 @@ export interface FileRouteTypes {
     | '/settings'
     | '/trackpad'
     | '/api/config'
+    | '/api/ip'
+    | '/api/token/generate'
     | '/api/webrtc/answer'
     | '/api/webrtc/candidates'
     | '/api/webrtc/offer'
@@ -97,6 +117,8 @@ export interface FileRouteTypes {
     | '/settings'
     | '/trackpad'
     | '/api/config'
+    | '/api/ip'
+    | '/api/token/generate'
     | '/api/webrtc/answer'
     | '/api/webrtc/candidates'
     | '/api/webrtc/offer'
@@ -106,6 +128,8 @@ export interface FileRouteTypes {
     | '/settings'
     | '/trackpad'
     | '/api/config'
+    | '/api/ip'
+    | '/api/token/generate'
     | '/api/webrtc/answer'
     | '/api/webrtc/candidates'
     | '/api/webrtc/offer'
@@ -116,6 +140,8 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   TrackpadRoute: typeof TrackpadRoute
   ApiConfigRoute: typeof ApiConfigRoute
+  ApiIpRoute: typeof ApiIpRoute
+  ApiTokenGenerateRoute: typeof ApiTokenGenerateRoute
   ApiWebrtcAnswerRoute: typeof ApiWebrtcAnswerRoute
   ApiWebrtcCandidatesRoute: typeof ApiWebrtcCandidatesRoute
   ApiWebrtcOfferRoute: typeof ApiWebrtcOfferRoute
@@ -142,6 +168,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ip': {
+      id: '/api/ip'
+      path: '/api/ip'
+      fullPath: '/api/ip'
+      preLoaderRoute: typeof ApiIpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/config': {
@@ -172,6 +205,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiWebrtcAnswerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/token/generate': {
+      id: '/api/token/generate'
+      path: '/api/token/generate'
+      fullPath: '/api/token/generate'
+      preLoaderRoute: typeof ApiTokenGenerateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -180,6 +220,8 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   TrackpadRoute: TrackpadRoute,
   ApiConfigRoute: ApiConfigRoute,
+  ApiIpRoute: ApiIpRoute,
+  ApiTokenGenerateRoute: ApiTokenGenerateRoute,
   ApiWebrtcAnswerRoute: ApiWebrtcAnswerRoute,
   ApiWebrtcCandidatesRoute: ApiWebrtcCandidatesRoute,
   ApiWebrtcOfferRoute: ApiWebrtcOfferRoute,

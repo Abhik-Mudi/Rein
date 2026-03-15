@@ -10,50 +10,19 @@ export const Route = createFileRoute("/settings")({
 
 function SettingsPage() {
 	const [ip, setIp] = useState("")
-	const [frontendPort, setFrontendPort] = useState(
-		String(serverConfig.frontendPort),
-	)
-	const [originalPort] = useState(String(serverConfig.frontendPort))
+    const [frontendPort, setFrontendPort] = useState(String(serverConfig.frontendPort))
+    const [originalPort] = useState(String(serverConfig.frontendPort))
+    const serverConfigChanged = frontendPort !== originalPort
 
-	const serverConfigChanged = frontendPort !== originalPort
+    // THE HYDRATION FLAG: Keeps track of when it's safe to read/write local data
+    const [isHydrated, setIsHydrated] = useState(false) 
 
-	// Client Side Settings (LocalStorage)
-	const [invertScroll, setInvertScroll] = useState(() => {
-		if (typeof window === "undefined") return false
-		try {
-			const saved = localStorage.getItem("rein_invert")
-			return saved === "true"
-		} catch {
-			return false
-		}
-	})
-
-	const [sensitivity, setSensitivity] = useState(() => {
-		if (typeof window === "undefined") return 1.0
-		const saved = localStorage.getItem("rein_sensitivity")
-		const parsed = saved ? Number.parseFloat(saved) : Number.NaN
-		return Number.isFinite(parsed) ? parsed : 1.0
-	})
-
-	const [theme, setTheme] = useState(() => {
-		if (typeof window === "undefined") return THEMES.DEFAULT
-		try {
-			const saved = localStorage.getItem(APP_CONFIG.THEME_STORAGE_KEY)
-			return saved === THEMES.LIGHT || saved === THEMES.DARK
-				? saved
-				: THEMES.DEFAULT
-		} catch {
-			return THEMES.DEFAULT
-		}
-	})
-
-	const [qrData, setQrData] = useState("")
-
-	// Load initial state (IP is not stored in localStorage; only sensitivity, invert, theme are client settings)
-	const [authToken, setAuthToken] = useState(() => {
-		if (typeof window === "undefined") return ""
-		return localStorage.getItem("rein_auth_token") || ""
-	})
+    // 1. Give everything simple, static default values (Matches Server perfectly)
+    const [invertScroll, setInvertScroll] = useState(false)
+    const [sensitivity, setSensitivity] = useState(1.0)
+    const [theme, setTheme] = useState(THEMES.DEFAULT)
+    const [authToken, setAuthToken] = useState("")
+    const [qrData, setQrData] = useState("")
 
 	// Derive URLs once at the top
 	const appPort = String(frontendPort)
@@ -63,6 +32,39 @@ function SettingsPage() {
 		? `${protocol}//${ip}:${appPort}/trackpad${authToken ? `?token=${encodeURIComponent(authToken)}` : ""}`
 		: ""
 
+	// 2. Fetch from LocalStorage AFTER the first render to prevent mismatches
+    useEffect(() => {
+        const savedSens = localStorage.getItem("rein_sensitivity")
+        if (savedSens) setSensitivity(Number.parseFloat(savedSens) || 1.0)
+
+        const savedInv = localStorage.getItem("rein_invert")
+        if (savedInv) setInvertScroll(savedInv === "true")
+
+        const savedTheme = localStorage.getItem(APP_CONFIG.THEME_STORAGE_KEY)
+        if (savedTheme) setTheme(savedTheme)
+
+        const savedToken = localStorage.getItem("rein_auth_token")
+        if (savedToken) setAuthToken(savedToken)
+
+        // The client is now in sync with the saved data!
+        setIsHydrated(true) 
+    }, [])
+
+	useEffect(() => {
+        if (isHydrated) localStorage.setItem("rein_sensitivity", String(sensitivity))
+    }, [sensitivity, isHydrated])
+
+    useEffect(() => {
+        if (isHydrated) localStorage.setItem("rein_invert", JSON.stringify(invertScroll))
+    }, [invertScroll, isHydrated])
+
+    useEffect(() => {
+        if (isHydrated) {
+            localStorage.setItem(APP_CONFIG.THEME_STORAGE_KEY, theme)
+            document.documentElement.setAttribute("data-theme", theme)
+        }
+    }, [theme, isHydrated])
+
 	useEffect(() => {
 		const defaultIp =
 			typeof window !== "undefined" ? window.location.hostname : "localhost"
@@ -71,46 +73,23 @@ function SettingsPage() {
 	}, [])
 
 	// Auto-generate token on settings page load (localhost only)
-	useEffect(() => {
-		if (typeof window === "undefined") return
+    useEffect(() => {
+        if (typeof window === "undefined") return
 
-		let isMounted = true
-
-		const protocol = window.location.protocol === "https:" ? "wss:" : "ws:"
-		const wsUrl = `${protocol}//${window.location.host}/ws`
-		const socket = new WebSocket(wsUrl)
-
-		socket.onopen = () => {
-			if (socket.readyState === WebSocket.OPEN) {
-				socket.send(JSON.stringify({ type: "generate-token" }))
-			}
-		}
-
-		socket.onmessage = (event) => {
-			try {
-				const data = JSON.parse(event.data)
-				if (data.type === "token-generated" && data.token) {
-					if (isMounted) {
-						setAuthToken(data.token)
-						localStorage.setItem("rein_auth_token", data.token)
-					}
-					socket.close()
-				}
-			} catch (e) {
-				console.error(e)
-			}
-		}
-
-		return () => {
-			isMounted = false
-			if (
-				socket.readyState === WebSocket.OPEN ||
-				socket.readyState === WebSocket.CONNECTING
-			) {
-				socket.close()
-			}
-		}
-	}, [])
+        const fetchToken = async () => {
+            try {
+                const res = await fetch('/api/token/generate', { method: 'POST' })
+                const data = await res.json()
+                if (data.token) {
+                    setAuthToken(data.token)
+                    localStorage.setItem("rein_auth_token", data.token)
+                }
+            } catch (e) {
+                console.error("Token API Error:", e)
+            }
+        }
+        fetchToken()
+    }, [])
 
 	// Effect: Update LocalStorage when settings change
 	useEffect(() => {
@@ -138,34 +117,20 @@ function SettingsPage() {
 	}, [ip, shareUrl])
 
 	// Effect: Auto-detect LAN IP from Server (only if on localhost)
-	useEffect(() => {
-		if (typeof window === "undefined") return
-		if (window.location.hostname !== "localhost") return
+    useEffect(() => {
+        if (typeof window === "undefined" || window.location.hostname !== "localhost") return
 
-		const protocol = window.location.protocol === "https:" ? "wss:" : "ws:"
-		const wsUrl = `${protocol}//${window.location.host}/ws`
-		const socket = new WebSocket(wsUrl)
-
-		socket.onopen = () => {
-			socket.send(JSON.stringify({ type: "get-ip" }))
-		}
-
-		socket.onmessage = (event) => {
-			try {
-				const data = JSON.parse(event.data)
-				if (data.type === "server-ip" && data.ip) {
-					setIp(data.ip)
-					socket.close()
-				}
-			} catch (e) {
-				console.error(e)
-			}
-		}
-
-		return () => {
-			if (socket.readyState === WebSocket.OPEN) socket.close()
-		}
-	}, [])
+        const fetchIp = async () => {
+            try {
+                const res = await fetch('/api/ip')
+                const data = await res.json()
+                if (data.ip) setIp(data.ip)
+            } catch (e) {
+                console.error("IP API Error:", e)
+            }
+        }
+        fetchIp()
+    }, [])
 
 	return (
 		<div className="h-full overflow-y-auto w-full">
@@ -305,48 +270,32 @@ function SettingsPage() {
 						</div>
 
 						<button
-							type="button"
-							className="btn btn-primary w-full rounded-md"
-							disabled={!serverConfigChanged}
-							onClick={() => {
-								const port = Number.parseInt(frontendPort, 10)
-								if (!Number.isFinite(port) || port < 1 || port > 65535) {
-									alert("Please enter a valid port number (1–65535).")
-									return
-								}
+                            type="button"
+                            className="btn btn-primary w-full rounded-md"
+                            disabled={!serverConfigChanged}
+                            onClick={async () => {
+                                const port = Number.parseInt(frontendPort, 10)
+                                if (!Number.isFinite(port) || port < 1 || port > 65535) {
+                                    alert("Please enter a valid port number (1–65535).")
+                                    return
+                                }
 
-								const protocol =
-									window.location.protocol === "https:" ? "wss:" : "ws:"
-								const host = window.location.host
-								const wsUrl = `${protocol}//${host}/ws`
-								const socket = new WebSocket(wsUrl)
-
-								socket.onerror = () => {
-									alert("Failed to connect to the server.")
-								}
-
-								socket.onopen = () => {
-									socket.send(
-										JSON.stringify({
-											type: "update-config",
-											config: {
-												frontendPort: port,
-											},
-										}),
-									)
-
-									setTimeout(() => {
-										socket.close()
-										const newProtocol = window.location.protocol
-										const newHostname = window.location.hostname
-										const newUrl = `${newProtocol}//${newHostname}:${frontendPort}/settings`
-										window.location.href = newUrl
-									}, 1000)
-								}
-							}}
-						>
-							Save Config
-						</button>
+                                try {
+                                    await fetch('/api/config', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ frontendPort: port })
+                                    })
+                                    
+                                    const newUrl = `${window.location.protocol}//${window.location.hostname}:${frontendPort}/settings`
+                                    window.location.href = newUrl
+                                } catch (e) {
+                                    alert("Failed to save config via API.")
+                                }
+                            }}
+                        >
+                            Save Config
+                        </button>
 					</div>
 
 					{/* Right Column: QR Code & Connection Info */}

@@ -6,7 +6,6 @@ import { nitro } from "nitro/vite"
 import { defineConfig } from "vite"
 import viteTsConfigPaths from "vite-tsconfig-paths"
 import serverConfig from "./src/server-config.json"
-import { createWsServer } from "./src/server/websocket"
 
 const config = defineConfig({
 	base: "./",
@@ -16,19 +15,6 @@ const config = defineConfig({
 		},
 	},
 	plugins: [
-		{
-			name: "websocket-server",
-			async configureServer(server) {
-				const httpServer = server.httpServer
-				if (!httpServer) return
-				await createWsServer(httpServer)
-			},
-			async configurePreviewServer(server) {
-				const httpServer = server.httpServer
-				if (!httpServer) return
-				await createWsServer(httpServer)
-			},
-		},
 		devtools(),
 		nitro(),
 		// this is the plugin that enables path aliases
