@@ -12,7 +12,7 @@ import {
 	ConnectionProvider,
 	useConnection,
 } from "../contexts/ConnectionProvider"
-import { useCaptureProvider } from "../hooks/useCaptureProvider"
+
 
 export const Route = createRootRoute({
 	component: AppWithConnection,
@@ -44,25 +44,94 @@ function RootComponent() {
 	)
 }
 
-function DesktopCaptureProvider() {
-	const { wsRef, status } = useConnection()
-	const { startSharing } = useCaptureProvider(wsRef)
-	const hasStartedRef = useRef(false)
+export function DesktopCaptureProvider() {
+    const hasStartedRef = useRef(false)
 
-	useEffect(() => {
-		if (status !== "connected" || hasStartedRef.current) return
+    useEffect(() => {
+        if (hasStartedRef.current) return
+        const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+        const canShare = !!navigator.mediaDevices?.getDisplayMedia
 
-		// Mobile detection: avoid auto-start on mobile
-		const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
-		const canShare = !!navigator.mediaDevices?.getDisplayMedia
+        if (!isMobile && canShare) {
+            hasStartedRef.current = true
 
-		if (!isMobile && canShare) {
-			hasStartedRef.current = true
-			startSharing()
-		}
-	}, [status, startSharing])
+            const startWebRTC = async () => {
+                let pollInterval: NodeJS.Timeout;
+                let icePollInterval: NodeJS.Timeout;
 
-	return null
+                try {
+                    const stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: { ideal: 60 } }, audio: false })
+                    const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] })
+
+                    const inputChannel = pc.createDataChannel('rein-input', { ordered: false, maxRetransmits: 0 })
+                    inputChannel.onmessage = (event) => {
+                        console.log("⚡ INCOMING WAYLAND INPUT FROM PHONE:", JSON.parse(event.data))
+                    }
+
+                    pc.onicecandidate = async (event) => {
+                        if (event.candidate) {
+                            await fetch('/api/webrtc/candidates', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ target: 'client', candidate: event.candidate })
+                            })
+                        }
+                    }
+
+                    stream.getTracks().forEach(track => pc.addTrack(track, stream))
+
+                    const offer = await pc.createOffer()
+                    await pc.setLocalDescription(offer)
+
+                    await fetch('/api/webrtc/offer', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ offer: pc.localDescription })
+                    })
+                    console.log("📬 Host Offer dropped in the API mailbox!")
+
+                    pollInterval = setInterval(async () => {
+                        try {
+                            const res = await fetch('/api/webrtc/answer')
+                            const data = await res.json()
+                            
+                            if (data.answer) {
+                                await pc.setRemoteDescription(new RTCSessionDescription(data.answer))
+                                clearInterval(pollInterval)
+                                console.log("✅ WebRTC Contract Signed! Host accepted Answer.")
+
+                                icePollInterval = setInterval(async () => {
+                                    const iceRes = await fetch('/api/webrtc/candidates?target=host')
+                                    const iceData = await iceRes.json()
+                                    if (iceData.candidates && iceData.candidates.length > 0) {
+                                        for (const c of iceData.candidates) {
+                                            await pc.addIceCandidate(new RTCIceCandidate(c)).catch(e => console.error("ICE Error", e))
+                                        }
+                                        clearInterval(icePollInterval)
+                                        console.log("🛰️ ICE Connected. Video should be flowing P2P now!")
+                                    }
+                                }, 1500)
+                            }
+                        } catch (err) { console.error("Polling error:", err) }
+                    }, 1000)
+
+                    stream.getVideoTracks()[0].onended = () => {
+                        clearInterval(pollInterval)
+                        clearInterval(icePollInterval)
+                        pc.close()
+                        hasStartedRef.current = false
+                    }
+
+                } catch (err) {
+                    console.error("User denied screen share or Wayland blocked it:", err)
+                    hasStartedRef.current = false
+                }
+            }
+            startWebRTC()
+        }
+    }, [])
+
+    return null
 }
 
 function ThemeInit() {

@@ -12,6 +12,10 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TrackpadRouteImport } from './routes/trackpad'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiConfigRouteImport } from './routes/api/config'
+import { Route as ApiWebrtcOfferRouteImport } from './routes/api/webrtc/offer'
+import { Route as ApiWebrtcCandidatesRouteImport } from './routes/api/webrtc/candidates'
+import { Route as ApiWebrtcAnswerRouteImport } from './routes/api/webrtc/answer'
 
 const TrackpadRoute = TrackpadRouteImport.update({
   id: '/trackpad',
@@ -28,35 +32,93 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiConfigRoute = ApiConfigRouteImport.update({
+  id: '/api/config',
+  path: '/api/config',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWebrtcOfferRoute = ApiWebrtcOfferRouteImport.update({
+  id: '/api/webrtc/offer',
+  path: '/api/webrtc/offer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWebrtcCandidatesRoute = ApiWebrtcCandidatesRouteImport.update({
+  id: '/api/webrtc/candidates',
+  path: '/api/webrtc/candidates',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWebrtcAnswerRoute = ApiWebrtcAnswerRouteImport.update({
+  id: '/api/webrtc/answer',
+  path: '/api/webrtc/answer',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/settings': typeof SettingsRoute
   '/trackpad': typeof TrackpadRoute
+  '/api/config': typeof ApiConfigRoute
+  '/api/webrtc/answer': typeof ApiWebrtcAnswerRoute
+  '/api/webrtc/candidates': typeof ApiWebrtcCandidatesRoute
+  '/api/webrtc/offer': typeof ApiWebrtcOfferRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/settings': typeof SettingsRoute
   '/trackpad': typeof TrackpadRoute
+  '/api/config': typeof ApiConfigRoute
+  '/api/webrtc/answer': typeof ApiWebrtcAnswerRoute
+  '/api/webrtc/candidates': typeof ApiWebrtcCandidatesRoute
+  '/api/webrtc/offer': typeof ApiWebrtcOfferRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/settings': typeof SettingsRoute
   '/trackpad': typeof TrackpadRoute
+  '/api/config': typeof ApiConfigRoute
+  '/api/webrtc/answer': typeof ApiWebrtcAnswerRoute
+  '/api/webrtc/candidates': typeof ApiWebrtcCandidatesRoute
+  '/api/webrtc/offer': typeof ApiWebrtcOfferRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/settings' | '/trackpad'
+  fullPaths:
+    | '/'
+    | '/settings'
+    | '/trackpad'
+    | '/api/config'
+    | '/api/webrtc/answer'
+    | '/api/webrtc/candidates'
+    | '/api/webrtc/offer'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/settings' | '/trackpad'
-  id: '__root__' | '/' | '/settings' | '/trackpad'
+  to:
+    | '/'
+    | '/settings'
+    | '/trackpad'
+    | '/api/config'
+    | '/api/webrtc/answer'
+    | '/api/webrtc/candidates'
+    | '/api/webrtc/offer'
+  id:
+    | '__root__'
+    | '/'
+    | '/settings'
+    | '/trackpad'
+    | '/api/config'
+    | '/api/webrtc/answer'
+    | '/api/webrtc/candidates'
+    | '/api/webrtc/offer'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SettingsRoute: typeof SettingsRoute
   TrackpadRoute: typeof TrackpadRoute
+  ApiConfigRoute: typeof ApiConfigRoute
+  ApiWebrtcAnswerRoute: typeof ApiWebrtcAnswerRoute
+  ApiWebrtcCandidatesRoute: typeof ApiWebrtcCandidatesRoute
+  ApiWebrtcOfferRoute: typeof ApiWebrtcOfferRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,6 +144,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/config': {
+      id: '/api/config'
+      path: '/api/config'
+      fullPath: '/api/config'
+      preLoaderRoute: typeof ApiConfigRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/webrtc/offer': {
+      id: '/api/webrtc/offer'
+      path: '/api/webrtc/offer'
+      fullPath: '/api/webrtc/offer'
+      preLoaderRoute: typeof ApiWebrtcOfferRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/webrtc/candidates': {
+      id: '/api/webrtc/candidates'
+      path: '/api/webrtc/candidates'
+      fullPath: '/api/webrtc/candidates'
+      preLoaderRoute: typeof ApiWebrtcCandidatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/webrtc/answer': {
+      id: '/api/webrtc/answer'
+      path: '/api/webrtc/answer'
+      fullPath: '/api/webrtc/answer'
+      preLoaderRoute: typeof ApiWebrtcAnswerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +179,10 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SettingsRoute: SettingsRoute,
   TrackpadRoute: TrackpadRoute,
+  ApiConfigRoute: ApiConfigRoute,
+  ApiWebrtcAnswerRoute: ApiWebrtcAnswerRoute,
+  ApiWebrtcCandidatesRoute: ApiWebrtcCandidatesRoute,
+  ApiWebrtcOfferRoute: ApiWebrtcOfferRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
