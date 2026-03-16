@@ -77,7 +77,7 @@ export function DesktopCaptureProvider() {
 					
 					// Listen for input events from the remote consumer
                     inputChannel.onmessage = (event) => {
-                        console.log("⚡ INCOMING WAYLAND INPUT FROM PHONE:", JSON.parse(event.data))
+                        console.log("INCOMING INPUT FROM PHONE:", JSON.parse(event.data))
 						// forward input to input handler
                     }
 
